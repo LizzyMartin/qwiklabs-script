@@ -78,7 +78,7 @@ export DECK_POD=$(kubectl get pods --namespace default -l "cluster=spin-deck" -o
 kubectl port-forward --namespace default $DECK_POD 8080:9000 >> /dev/null &
 
 printf "\n\e[1;96m%s\n\n\e[m" 'Config created'
-sleep 10
+sleep 50
 
 # DOCKER
 gsutil -m cp -r gs://spls/gsp114/sample-app.tar .
@@ -109,7 +109,7 @@ gsutil versioning set on gs://$PROJECT-kubernetes-manifests
 sed -i s/PROJECT/$PROJECT/g k8s/deployments/*
 git commit -a -m "Set project ID"
 
-sleep 2.5
+sleep 50
 
 # BUILD IMAGE
 git tag v1.0.0
@@ -122,7 +122,7 @@ sed s/PROJECT/$PROJECT/g spinnaker/pipeline-deploy.json > pipeline.json
 ./spin pipeline save --gate-endpoint http://localhost:8080/gate -f pipeline.json
 
 printf "\n\e[1;96m%s\n\n\e[m" 'Image builded'
-sleep 30
+sleep 50
 
 # TRIGGER FROM CODE
 sed -i 's/orange/blue/g' cmd/gke-info/common-service.go
