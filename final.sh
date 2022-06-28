@@ -1,5 +1,11 @@
 #!/bin/bash
 
+gcloud config set compute/zone us-central1-f
+gcloud container clusters create spinnaker-tutorial --machine-type=n1-standard-2
+
+printf "\n\e[1;96m%s\n\n\e[m" 'Cluster created'
+sleep 2.5
+
 ## IAM
 gcloud iam service-accounts create spinnaker-account --display-name spinnaker-account
 export SA_EMAIL=$(gcloud iam service-accounts list --filter="displayName:spinnaker-account" --format='value(email)')
@@ -18,6 +24,9 @@ kubectl create clusterrolebinding user-admin-binding --clusterrole=cluster-admin
 kubectl create clusterrolebinding --clusterrole=cluster-admin --serviceaccount=default:default spinnaker-admin
 helm repo add stable https://charts.helm.sh/stable
 helm repo update
+
+printf "\n\e[1;96m%s\n\n\e[m" 'IAM PUBSUB HELM created'
+sleep 2.5
 
 # CONFIG
 export PROJECT=$(gcloud info --format='value(config.project)')
@@ -68,6 +77,9 @@ helm install -n default cd stable/spinnaker -f spinnaker-config.yaml --version 2
 export DECK_POD=$(kubectl get pods --namespace default -l "cluster=spin-deck" -o jsonpath="{.items[0].metadata.name}")
 kubectl port-forward --namespace default $DECK_POD 8080:9000 >> /dev/null &
 
+printf "\n\e[1;96m%s\n\n\e[m" 'Config created'
+sleep 10
+
 # DOCKER
 gsutil -m cp -r gs://spls/gsp114/sample-app.tar .
 mkdir sample-app
@@ -84,6 +96,9 @@ export PROJECT=$(gcloud info --format='value(config.project)')
 git remote add origin https://source.developers.google.com/p/$PROJECT/r/sample-app
 git push origin master
 
+printf "\n\e[1;96m%s\n\n\e[m" 'Docker created'
+sleep 2.5
+
 # CLOUD BUILD
 gcloud beta builds triggers create cloud-source-repositories --name="sample-app-tags" --repo="sample-app" --tag-pattern="v1.*" --build-config="cloudbuild.yaml"
 
@@ -94,6 +109,8 @@ gsutil versioning set on gs://$PROJECT-kubernetes-manifests
 sed -i s/PROJECT/$PROJECT/g k8s/deployments/*
 git commit -a -m "Set project ID"
 
+sleep 2.5
+
 # BUILD IMAGE
 git tag v1.0.0
 git push --tags
@@ -103,6 +120,9 @@ chmod +x spin
 export PROJECT=$(gcloud info --format='value(config.project)')
 sed s/PROJECT/$PROJECT/g spinnaker/pipeline-deploy.json > pipeline.json
 ./spin pipeline save --gate-endpoint http://localhost:8080/gate -f pipeline.json
+
+printf "\n\e[1;96m%s\n\n\e[m" 'Image builded'
+sleep 30
 
 # TRIGGER FROM CODE
 sed -i 's/orange/blue/g' cmd/gke-info/common-service.go
